@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+  ip-to-country:
+    container_name: ip-to-country
+    build:
+      context: ./ip-to-country
+      dockerfile: ../Dockerfile
+    environment:
+      - DATABASE_PATH=/mmdb/database.mmdb
+      - PORT=3000
+      - HOST=0.0.0.0
+      - RELOAD_DATABASE_INTERVAL=30
+    ports:
+      - 3000:3000
+    volumes:
+      - "./mmdb:/mmdb"
