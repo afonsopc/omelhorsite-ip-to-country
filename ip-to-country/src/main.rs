@@ -1,11 +1,10 @@
 use actix_web::{get, web, App, HttpResponse, HttpServer, Responder};
-use async_std::task;
 use dotenv::dotenv;
 use envconfig::Envconfig;
-use lazy_static::lazy_static;
 use maxminddb::{geoip2::Country, Reader};
 use serde::Serialize;
 use std::{net::IpAddr, sync::Mutex};
+use tokio::{task, time};
 
 #[derive(Envconfig)]
 pub struct Config {
@@ -17,23 +16,6 @@ pub struct Config {
     pub host: String,
     #[envconfig(from = "PORT")]
     pub port: u16,
-}
-
-lazy_static! {
-    pub static ref CONFIG: Config = {
-        dotenv().ok();
-        Config::init_from_env().unwrap()
-    };
-}
-
-lazy_static! {
-    pub static ref DATABASE: Reader<Vec<u8>> = {
-        async fn read_database() -> Reader<Vec<u8>> {
-            maxminddb::Reader::open_readfile(&CONFIG.database_path).unwrap()
-        }
-
-        task::block_on(read_database())
-    };
 }
 
 #[derive(Debug)]
@@ -128,7 +110,7 @@ async fn main() -> std::io::Result<()> {
     let app_state_clone = app_state.clone();
     task::spawn(async move {
         loop {
-            task::sleep(std::time::Duration::from_secs(
+            time::sleep(std::time::Duration::from_secs(
                 config.reload_database_interval,
             ))
             .await;
